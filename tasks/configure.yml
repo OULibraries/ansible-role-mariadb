@@ -1,44 +1,54 @@
 ---
-- name: MariaDB - max allowed packet
-  ini_file:
-    dest: /etc/my.cnf
-    section: mysqld
-    option: max_allowed_packet
-    value: 24M
-    backup: yes
-- name: MariaDB - max connections
-  ini_file:
-    dest: /etc/my.cnf
-    section: mysqld
-    option: max_connections
-    value: 500
-    backup: yes
 - name: Start database server on boot
   service:
     name: mariadb
     state: started
-    enabled: yes
-# Equivilant to mysql_secure_installation
-- name: delete anonymous MySQL server user for *
-  action: mysql_user user="" host="*" state="absent"
-  ignore_errors: yes
-- name: delete anonymous MySQL server user for localhost
-  action: mysql_user user="" state="absent"
-  ignore_errors: yes
-- name: remove the MySQL test database
-  action: mysql_db db=test state=absent
-  ignore_errors: yes
-# 'localhost' needs to be the last item for idempotency, see
-# http://ansible.cc/docs/modules.html#mysql-user  
+    enabled: true
 - name: Change root user password on first run
-  mysql_user: login_user=root
-              login_password=''
-              name=root
-              password={{ mariadb_root_pass }}
-              priv=*.*:ALL,GRANT
-              host={{ item }}
+  mysql_user:
+    check_implicit_admin: yes
+    login_user: root
+    login_password: "{{mariadb_root_pass}}"
+    name: root
+    password: "{{mariadb_root_pass}}"
+    priv: '*.*:ALL,GRANT'
+    host: "{{item}}"
+    state: present
   with_items:
     - 127.0.0.1
     - ::1
     - localhost
-  ignore_errors: yes
+# Equivilant to mysql_secure_installation
+# Removes anonymous user account for localhost
+- name: MariaDB - max allowed packet
+  mysql_variables:
+    variable: "{{item.variable}}"
+    value: "{{item.value}}"
+    config_file: /etc/my.cnf
+    login_user: root
+    login_password: "{{ mariadb_root_pass }}"
+  with_items:
+    - {variable: max_allowed_packet, value: "25165824"}
+    - {variable: max_connections, value: "500"}
+- mysql_user:
+    name: ''
+    host: localhost
+    state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_pass }}"
+# Removes all anonymous user accounts
+- mysql_user:
+    name: ''
+    host_all: true
+    login_user: root
+    login_password: "{{ mariadb_root_pass }}"
+    state: absent
+- name: remove the MySQL test database
+  mysql_db:
+    db: test
+    state: absent
+    login_user: root
+    login_password: "{{ mariadb_root_pass }}"
+# 'localhost' needs to be the last item for idempotency, see
+# http://ansible.cc/docs/modules.html#mysql-user
+

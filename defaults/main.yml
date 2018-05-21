@@ -1,3 +1,3 @@
 ---
 ## defaults file for MaridaDB
-mariadb_root_pass: "{{ hostvars['localhost']['mariadb_root'] }}"
+#mariadb_root_pass: "{{ hostvars['mariadb_root'] }}"

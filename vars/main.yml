@@ -1,2 +1,3 @@
 ---
 # vars file for MariaDB
+#mariadb_root_pass: root
