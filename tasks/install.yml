@@ -1,9 +1,5 @@
 ---
 - name: MariaDB packages
   yum:
-    name: "{{ item }}"
+    name: "mariadb,mariadb-server,MySQL-python"
     state: present
-  with_items:
-  - mariadb
-  - mariadb-server
-  - MySQL-python
